@@ -12,6 +12,7 @@ import { PaymentPage } from './pages/payment-page.jsx'
 import { PlaceholderPage } from './pages/placeholder-page.jsx'
 import { AdminLoginPage } from './pages/admin-login-page.jsx'
 import { AdminRegisterPage } from './pages/admin-register-page.jsx'
+import { AdminRegisterSuccessPage } from './pages/admin-register-success-page.jsx'
 import { AdminDashboardPage } from './pages/admin-dashboard-page.jsx'
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
                   }
                 />
                 <Route path="/admin/login" element={<AdminLoginPage />} />
+                <Route path="/admin/register/success" element={<AdminRegisterSuccessPage />} />
                 <Route path="/admin/register" element={<AdminRegisterPage />} />
                 <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

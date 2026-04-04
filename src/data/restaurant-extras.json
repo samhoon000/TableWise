@@ -1,0 +1,116 @@
+{
+  "defaultTables": [
+    { "id": "T1", "seats": 2 },
+    { "id": "T2", "seats": 2 },
+    { "id": "T3", "seats": 4 },
+    { "id": "T4", "seats": 4 },
+    { "id": "T5", "seats": 6 },
+    { "id": "T6", "seats": 6 }
+  ],
+  "tablesByRestaurant": {
+    "sakura-izakaya": [
+      { "id": "T1", "seats": 2 },
+      { "id": "T2", "seats": 4 },
+      { "id": "T3", "seats": 4 },
+      { "id": "T4", "seats": 6 }
+    ],
+    "midnight-tacos": [
+      { "id": "T1", "seats": 2 },
+      { "id": "T2", "seats": 2 },
+      { "id": "T3", "seats": 4 },
+      { "id": "T4", "seats": 4 },
+      { "id": "T5", "seats": 8 }
+    ]
+  },
+  "defaultMenuCategories": [
+    {
+      "category": "Starters",
+      "items": [
+        {
+          "name": "House Soup",
+          "description": "Seasonal broth with herbs and croutons.",
+          "price": "₹220",
+          "diet": "veg",
+          "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&q=80"
+        },
+        {
+          "name": "Crispy Calamari",
+          "description": "Lightly fried with lemon aioli.",
+          "price": "₹380",
+          "diet": "non-veg"
+        },
+        {
+          "name": "Charred Broccoli",
+          "description": "Chili flakes, garlic, and toasted almonds.",
+          "price": "₹260",
+          "diet": "veg"
+        }
+      ]
+    },
+    {
+      "category": "Main Course",
+      "items": [
+        {
+          "name": "Chef's Grill Plate",
+          "description": "Protein of the day with seasonal vegetables.",
+          "price": "₹720",
+          "diet": "non-veg",
+          "image": "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&q=80"
+        },
+        {
+          "name": "Stone Oven Pizza",
+          "description": "San Marzano tomatoes, mozzarella, basil.",
+          "price": "₹560",
+          "diet": "veg"
+        },
+        {
+          "name": "Slow-Braised Curry",
+          "description": "Aromatic spices with basmati rice.",
+          "price": "₹480",
+          "diet": "veg"
+        }
+      ]
+    },
+    {
+      "category": "Desserts",
+      "items": [
+        {
+          "name": "Dark Chocolate Torte",
+          "description": "Flourless cake with berry compote.",
+          "price": "₹320",
+          "diet": "veg"
+        },
+        {
+          "name": "Seasonal Sorbet",
+          "description": "Two scoops, chef's choice.",
+          "price": "₹180",
+          "diet": "veg"
+        }
+      ]
+    },
+    {
+      "category": "Beverages",
+      "items": [
+        {
+          "name": "Fresh Lime Soda",
+          "description": "Sweet or salted.",
+          "price": "₹120",
+          "diet": "veg"
+        },
+        {
+          "name": "House Red / White (glass)",
+          "description": "Rotating wine list.",
+          "price": "₹350",
+          "diet": "veg"
+        },
+        {
+          "name": "Artisan Cold Brew",
+          "description": "Small-batch coffee, iced.",
+          "price": "₹160",
+          "diet": "veg",
+          "image": "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=400&q=80"
+        }
+      ]
+    }
+  ]
+}

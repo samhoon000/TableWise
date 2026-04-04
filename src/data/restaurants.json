@@ -1,0 +1,239 @@
+{
+  "restaurants": [
+    {
+      "id": "saffron-room",
+      "name": "The Saffron Room",
+      "cuisine": "North Indian",
+      "rating": 4.6,
+      "reviewCount": 428,
+      "priceRange": "₹₹₹",
+      "location": "Indiranagar, Bengaluru",
+      "image": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
+      "bannerImage": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1600&q=80",
+      "description": "Elevated Indian dining with a seasonal tasting menu, warm lighting, and an intimate dining room suited for celebrations and business dinners.",
+      "openingHours": [
+        "Mon–Thu: 12:00 PM – 3:00 PM, 6:30 PM – 11:00 PM",
+        "Fri–Sat: 12:00 PM – 3:30 PM, 6:00 PM – 11:30 PM",
+        "Sun: 12:00 PM – 3:00 PM, 6:00 PM – 10:30 PM"
+      ],
+      "phone": "+91 80 4123 8890",
+      "email": "reserve@saffronroom.example",
+      "reviews": [
+        {
+          "author": "Meera K.",
+          "rating": 5,
+          "date": "Mar 2026",
+          "text": "Consistent quality and thoughtful service. The dal makhani and breads were outstanding."
+        },
+        {
+          "author": "Arjun S.",
+          "rating": 4,
+          "date": "Feb 2026",
+          "text": "Great ambience. Reservations were honored on time; slightly noisy on a Saturday night."
+        },
+        {
+          "author": "Lisa T.",
+          "rating": 5,
+          "date": "Jan 2026",
+          "text": "Perfect for a date night. Staff accommodated dietary restrictions without fuss."
+        }
+      ]
+    },
+    {
+      "id": "coastal-plate",
+      "name": "Coastal Plate",
+      "cuisine": "South Indian, Seafood",
+      "rating": 4.4,
+      "reviewCount": 612,
+      "priceRange": "₹₹",
+      "location": "Koramangala, Bengaluru",
+      "image": "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80",
+      "bannerImage": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1600&q=80",
+      "description": "Coastal flavours with fresh catch of the day, appams, and classic Kerala-style preparations in a relaxed, family-friendly setting.",
+      "openingHours": [
+        "Daily: 11:30 AM – 3:30 PM, 6:30 PM – 11:00 PM"
+      ],
+      "phone": "+91 80 2550 4412",
+      "email": "hello@coastalplate.example",
+      "reviews": [
+        {
+          "author": "Vikram R.",
+          "rating": 5,
+          "date": "Mar 2026",
+          "text": "Fish curry and neer dosa were authentic. Booking online was smooth."
+        },
+        {
+          "author": "Ananya P.",
+          "rating": 4,
+          "date": "Feb 2026",
+          "text": "Loved the spice levels. Wait time was minimal with a reservation."
+        }
+      ]
+    },
+    {
+      "id": "osteria-nove",
+      "name": "Osteria Nove",
+      "cuisine": "Italian",
+      "rating": 4.7,
+      "reviewCount": 891,
+      "priceRange": "₹₹₹",
+      "location": "Lavelle Road, Bengaluru",
+      "image": "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=800&q=80",
+      "bannerImage": "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=1600&q=80",
+      "description": "Handmade pasta, wood-fired pizzas, and Italian wines in a contemporary trattoria-style space with sidewalk seating.",
+      "openingHours": [
+        "Mon–Sun: 12:00 PM – 3:00 PM, 6:00 PM – 11:30 PM"
+      ],
+      "phone": "+91 80 2211 9033",
+      "email": "book@osterianove.example",
+      "reviews": [
+        {
+          "author": "Daniel H.",
+          "rating": 5,
+          "date": "Apr 2026",
+          "text": "Best cacio e pepe in the city. Reservation recommended—walk-ins had a wait."
+        },
+        {
+          "author": "Priya M.",
+          "rating": 4,
+          "date": "Mar 2026",
+          "text": "Lovely wine list. Portions are generous for the price tier."
+        }
+      ]
+    },
+    {
+      "id": "ember-grill",
+      "name": "Ember Grill",
+      "cuisine": "Steakhouse, Grill",
+      "rating": 4.5,
+      "reviewCount": 356,
+      "priceRange": "₹₹₹",
+      "location": "UB City, Bengaluru",
+      "image": "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=80",
+      "bannerImage": "https://images.unsplash.com/photo-1558030006-450675393462?w=1600&q=80",
+      "description": "Prime cuts, classic sides, and craft cocktails in a refined grill room with open kitchen views.",
+      "openingHours": [
+        "Tue–Sun: 6:00 PM – 11:30 PM",
+        "Mon: Closed"
+      ],
+      "phone": "+91 80 4001 7720",
+      "email": "reservations@embergrill.example",
+      "reviews": [
+        {
+          "author": "Rohit N.",
+          "rating": 5,
+          "date": "Mar 2026",
+          "text": "Steaks cooked perfectly to temperature. Professional service throughout."
+        }
+      ]
+    },
+    {
+      "id": "sakura-izakaya",
+      "name": "Sakura Izakaya",
+      "cuisine": "Japanese",
+      "rating": 4.3,
+      "reviewCount": 502,
+      "priceRange": "₹₹",
+      "location": "MG Road, Bengaluru",
+      "image": "https://images.unsplash.com/photo-1579027989536-b7b1d875877b?w=800&q=80",
+      "bannerImage": "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=1600&q=80",
+      "description": "Casual izakaya fare—yakitori, ramen, and small plates—paired with sake and Japanese highballs.",
+      "openingHours": [
+        "Mon–Thu: 12:00 PM – 2:30 PM, 5:30 PM – 11:00 PM",
+        "Fri–Sat: 12:00 PM – 3:00 PM, 5:30 PM – 12:00 AM",
+        "Sun: 12:00 PM – 3:00 PM, 5:30 PM – 11:00 PM"
+      ],
+      "phone": "+91 80 2558 0091",
+      "email": "info@sakuraizakaya.example",
+      "reviews": [
+        {
+          "author": "Ken Y.",
+          "rating": 4,
+          "date": "Feb 2026",
+          "text": "Solid ramen and good vibe. A bit loud during peak hours."
+        },
+        {
+          "author": "Sneha D.",
+          "rating": 5,
+          "date": "Jan 2026",
+          "text": "Vegetarian options were surprisingly well done."
+        }
+      ]
+    },
+    {
+      "id": "basil-bistro",
+      "name": "Basil Bistro",
+      "cuisine": "Mediterranean",
+      "rating": 4.2,
+      "reviewCount": 267,
+      "priceRange": "₹₹",
+      "location": "Whitefield, Bengaluru",
+      "image": "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=800&q=80",
+      "bannerImage": "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1600&q=80",
+      "description": "Mezze, grills, and fresh salads inspired by the Eastern Mediterranean, with vegetarian-forward plates.",
+      "openingHours": [
+        "Daily: 11:00 AM – 11:00 PM"
+      ],
+      "phone": "+91 80 6722 3100",
+      "email": "contact@basilbistro.example",
+      "reviews": [
+        {
+          "author": "Omar F.",
+          "rating": 4,
+          "date": "Mar 2026",
+          "text": "Fresh hummus and warm pita. Good for groups."
+        }
+      ]
+    },
+    {
+      "id": "midnight-tacos",
+      "name": "Midnight Tacos",
+      "cuisine": "Mexican",
+      "rating": 4.1,
+      "reviewCount": 743,
+      "priceRange": "₹₹",
+      "location": "HSR Layout, Bengaluru",
+      "image": "https://images.unsplash.com/photo-1565299585323-38174c0b5e8d?w=800&q=80",
+      "bannerImage": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1600&q=80",
+      "description": "Street-style tacos, aguas frescas, and margaritas in a colourful, upbeat cantina.",
+      "openingHours": [
+        "Daily: 12:00 PM – 12:00 AM"
+      ],
+      "phone": "+91 80 2572 8844",
+      "email": "hola@midnighttacos.example",
+      "reviews": [
+        {
+          "author": "Chris L.",
+          "rating": 4,
+          "date": "Feb 2026",
+          "text": "Great carnitas. Reservations help on weekends."
+        }
+      ]
+    },
+    {
+      "id": "lotus-garden",
+      "name": "Lotus Garden",
+      "cuisine": "Pan-Asian",
+      "rating": 4.5,
+      "reviewCount": 389,
+      "priceRange": "₹₹₹",
+      "location": "Jayanagar, Bengaluru",
+      "image": "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&q=80",
+      "bannerImage": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1600&q=80",
+      "description": "Dim sum, Thai curries, and wok dishes in a garden-themed dining room with private booths.",
+      "openingHours": [
+        "Mon–Sun: 12:00 PM – 3:30 PM, 6:30 PM – 11:00 PM"
+      ],
+      "phone": "+91 80 2654 1200",
+      "email": "reserve@lotusgarden.example",
+      "reviews": [
+        {
+          "author": "Hannah W.",
+          "rating": 5,
+          "date": "Apr 2026",
+          "text": "Dim sum brunch was excellent. Easy to modify reservation online."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "users": [
+    {
+      "email": "owner@saffron.example",
+      "password": "demo123",
+      "verified": true,
+      "restaurantId": "saffron-room",
+      "displayName": "Saffron Room Owner"
+    },
+    {
+      "email": "pending@example.com",
+      "password": "demo123",
+      "verified": false,
+      "restaurantId": "coastal-plate",
+      "displayName": "Pending Owner"
+    }
+  ]
+}

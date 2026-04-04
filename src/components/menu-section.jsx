@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { getMenuForRestaurant } from '../data/restaurant-menus.js'
 
 export function MenuSection({ restaurantId }) {
@@ -74,53 +75,76 @@ export function MenuSection({ restaurantId }) {
         </div>
       </section>
 
-      {modalIndex !== null && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/95 p-4 backdrop-blur-sm" onClick={closeModal}>
-          {/* Close button */}
-          <button
-            type="button"
-            className="absolute right-4 top-4 z-10 rounded-full bg-stone-800/50 p-2 text-stone-200 transition hover:bg-stone-700 hover:text-white sm:right-8 sm:top-8"
-            onClick={(e) => { e.stopPropagation(); closeModal(); }}
-            title="Close"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-          </button>
+      {modalIndex !== null && createPortal(
+        <>
+          {/* Dim overlay — fixed to viewport */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-[2px] animate-[fadeIn_200ms_ease]"
+            style={{ zIndex: 9998 }}
+            onClick={closeModal}
+          />
 
-          {/* Page indicator */}
-          <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 rounded-full bg-stone-800/70 px-4 py-1.5 text-xs font-medium text-stone-200 backdrop-blur sm:bottom-10">
-            {pages[modalIndex].label} — {modalIndex + 1} / {pages.length}
+          {/* Centered popup — fixed to viewport, NOT inside any scrollable parent */}
+          <div
+            className="fixed w-[90%] sm:w-[70%] md:w-[60%] rounded-2xl bg-white shadow-2xl animate-[scaleIn_250ms_ease]"
+            style={{
+              zIndex: 9999,
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              maxHeight: '80vh',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close ❌ */}
+            <button
+              type="button"
+              className="absolute -right-3 -top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white text-stone-500 shadow-md border border-stone-200 transition hover:bg-stone-100 hover:text-stone-800"
+              onClick={closeModal}
+              title="Close"
+            >
+              ❌
+            </button>
+
+            {/* Image */}
+            <div className="relative flex items-center justify-center overflow-hidden rounded-2xl" style={{ maxHeight: '80vh' }}>
+              {/* Previous */}
+              <button
+                type="button"
+                className="absolute left-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-stone-700 shadow-md transition hover:bg-white hover:scale-105"
+                onClick={prevImage}
+                title="Previous"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+
+              <img
+                src={pages[modalIndex].src}
+                alt={pages[modalIndex].label}
+                className="w-full rounded-2xl object-contain"
+                style={{ maxHeight: '78vh' }}
+              />
+
+              {/* Next */}
+              <button
+                type="button"
+                className="absolute right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-stone-700 shadow-md transition hover:bg-white hover:scale-105"
+                onClick={nextImage}
+                title="Next"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
+
+            {/* Page indicator */}
+            <div className="py-2.5 text-center text-xs font-medium text-stone-500">
+              {pages[modalIndex].label} — {modalIndex + 1} / {pages.length}
+            </div>
           </div>
-
-          {/* Previous */}
-          <button
-            type="button"
-            className="absolute left-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-stone-800/80 text-white shadow-lg backdrop-blur transition hover:bg-stone-700 hover:scale-105 sm:left-12"
-            onClick={prevImage}
-            title="Previous"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-          </button>
-
-          {/* Image */}
-          <div className="relative mx-auto flex h-full max-h-[90vh] w-full max-w-4xl items-center justify-center p-2 sm:p-8" onClick={(e) => e.stopPropagation()}>
-            <img
-              src={pages[modalIndex].src}
-              alt={pages[modalIndex].label}
-              className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
-            />
-          </div>
-
-          {/* Next */}
-          <button
-            type="button"
-            className="absolute right-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-stone-800/80 text-white shadow-lg backdrop-blur transition hover:bg-stone-700 hover:scale-105 sm:right-12"
-            onClick={nextImage}
-            title="Next"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-          </button>
-        </div>
+        </>,
+        document.body,
       )}
     </>
   )
 }
+

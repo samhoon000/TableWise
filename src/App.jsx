@@ -9,7 +9,7 @@ import { RestaurantDetailPage } from './pages/restaurant-detail-page.jsx'
 import { BookingFlowPage } from './pages/booking-flow-page.jsx'
 import { ConfirmationPage } from './pages/confirmation-page.jsx'
 import { PaymentPage } from './pages/payment-page.jsx'
-import { PlaceholderPage } from './pages/placeholder-page.jsx'
+import { MyReservationsPage } from './pages/my-reservations-page.jsx'
 import { AdminLoginPage } from './pages/admin-login-page.jsx'
 import { AdminRegisterPage } from './pages/admin-register-page.jsx'
 import { AdminRegisterSuccessPage } from './pages/admin-register-success-page.jsx'
@@ -29,15 +29,7 @@ export default function App() {
                 <Route path="/book/:restaurantId" element={<BookingFlowPage />} />
                 <Route path="/payment" element={<PaymentPage />} />
                 <Route path="/confirmation" element={<ConfirmationPage />} />
-                <Route
-                  path="/my-reservations"
-                  element={
-                    <PlaceholderPage
-                      title="My reservations"
-                      description="Signed-in guests would see upcoming and past reservations here. This demo does not persist bookings."
-                    />
-                  }
-                />
+                <Route path="/my-reservations" element={<MyReservationsPage />} />
                 <Route path="/admin/login" element={<AdminLoginPage />} />
                 <Route path="/admin/register/success" element={<AdminRegisterSuccessPage />} />
                 <Route path="/admin/register" element={<AdminRegisterPage />} />

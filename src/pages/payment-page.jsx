@@ -63,30 +63,53 @@ export function PaymentPage() {
     if (err) return
 
     setPaying(true)
-    window.setTimeout(() => {
-      const methodLabel = METHODS.find((m) => m.id === method)?.label ?? method
-      addReservation({
-        restaurantId: pendingPayment.restaurantId,
-        restaurantName: pendingPayment.restaurantName,
-        tableId: pendingPayment.tableId,
-        date: pendingPayment.date,
-        entryTime: pendingPayment.entryTime,
-        exitTime: pendingPayment.exitTime,
-        guestName: pendingPayment.guestName,
-        guests: pendingPayment.guests,
-        totalPrice: pendingPayment.totalPrice,
-      })
 
-      setConfirmedReservation({
-        ...pendingPayment,
-        paidAmount: pendingPayment.totalPrice,
-        paymentMethodLabel: methodLabel,
-        paymentConfirmationMessage: 'Your payment was successful. A receipt has been sent to your email.',
-      })
-      setPendingPayment(null)
-      setPaying(false)
-      navigate('/confirmation', { replace: true })
-    }, 1600)
+    const options = {
+      key: "rzp_test_SZXTjl6nHHQOAD", // replace later
+      amount: pendingPayment.totalPrice * 100,
+      currency: "INR",
+      name: "Tablewise",
+      description: "Restaurant Booking",
+      handler: function (response) {
+        const methodLabel = METHODS.find((m) => m.id === method)?.label ?? method
+
+        addReservation({
+          restaurantId: pendingPayment.restaurantId,
+          restaurantName: pendingPayment.restaurantName,
+          tableId: pendingPayment.tableId,
+          date: pendingPayment.date,
+          entryTime: pendingPayment.entryTime,
+          exitTime: pendingPayment.exitTime,
+          guestName: pendingPayment.guestName,
+          guests: pendingPayment.guests,
+          totalPrice: pendingPayment.totalPrice,
+        })
+
+        setConfirmedReservation({
+          ...pendingPayment,
+          paidAmount: pendingPayment.totalPrice,
+          paymentMethodLabel: methodLabel,
+          paymentConfirmationMessage: "Your payment was successful. A receipt has been sent to your email.",
+        })
+
+        setPendingPayment(null)
+        setPaying(false)
+        navigate('/confirmation', { replace: true })
+      },
+      prefill: {
+        name: pendingPayment.guestName || "Guest",
+        email: "test@example.com",
+        contact: "9999999999",
+      },
+      theme: {
+        color: "#0f766e",
+      },
+    }
+
+    const rzp = new window.Razorpay(options)
+    rzp.open()
+
+    setPaying(false)
   }
 
   return (
@@ -134,6 +157,7 @@ export function PaymentPage() {
 
       <section className="mt-6 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Payment method</h2>
+
         <div className="mt-4 flex flex-wrap gap-2">
           {METHODS.map((m) => (
             <button

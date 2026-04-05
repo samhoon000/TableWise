@@ -18,8 +18,8 @@ const METHODS = [
 
 export function PaymentPage() {
   const navigate = useNavigate()
-  const { pendingPayment, setPendingPayment, setConfirmedReservation } = useBooking()
-  const { addReservation } = useVenueStore()
+  const { pendingPayment, setPendingPayment } = useBooking()
+  const { createPaidReservation, syncRestaurant } = useVenueStore()
 
   const [method, setMethod] = useState('upi')
   const [upiId, setUpiId] = useState('')
@@ -30,6 +30,7 @@ export function PaymentPage() {
   const [bankChoice, setBankChoice] = useState('')
   const [paying, setPaying] = useState(false)
   const [formError, setFormError] = useState('')
+  const [payError, setPayError] = useState('')
 
   useEffect(() => {
     if (!pendingPayment) navigate('/restaurants', { replace: true })
@@ -60,56 +61,57 @@ export function PaymentPage() {
   const handlePay = () => {
     const err = validateForm()
     setFormError(err)
+    setPayError('')
     if (err) return
 
     setPaying(true)
+    const checkout = pendingPayment
+    const payMethod = method
 
     const options = {
-      key: "rzp_test_SZXTjl6nHHQOAD", // replace later
-      amount: pendingPayment.totalPrice * 100,
-      currency: "INR",
-      name: "Tablewise",
-      description: "Restaurant Booking",
-      handler: function (response) {
-        const methodLabel = METHODS.find((m) => m.id === method)?.label ?? method
-
-        addReservation({
-          restaurantId: pendingPayment.restaurantId,
-          restaurantName: pendingPayment.restaurantName,
-          tableId: pendingPayment.tableId,
-          date: pendingPayment.date,
-          entryTime: pendingPayment.entryTime,
-          exitTime: pendingPayment.exitTime,
-          guestName: pendingPayment.guestName,
-          guests: pendingPayment.guests,
-          totalPrice: pendingPayment.totalPrice,
-        })
-
-        setConfirmedReservation({
-          ...pendingPayment,
-          paidAmount: pendingPayment.totalPrice,
-          paymentMethodLabel: methodLabel,
-          paymentConfirmationMessage: "Your payment was successful. A receipt has been sent to your email.",
-        })
-
-        setPendingPayment(null)
-        setPaying(false)
-        navigate('/confirmation', { replace: true })
+      key: 'rzp_test_SZXTjl6nHHQOAD',
+      amount: checkout.totalPrice * 100,
+      currency: 'INR',
+      name: 'Tablewise',
+      description: 'Restaurant Booking',
+      handler: async function () {
+        const methodLabel = METHODS.find((m) => m.id === payMethod)?.label ?? payMethod
+        try {
+          const { reservationId } = await createPaidReservation(checkout)
+          const id = reservationId != null ? String(reservationId).trim() : ''
+          if (!id) {
+            throw new Error('Booking saved but no reservation ID was returned. Please contact support with your payment receipt.')
+          }
+          setPendingPayment(null)
+          setPaying(false)
+          navigate(`/confirmation/${id}`, { replace: true, state: { paymentMethodLabel: methodLabel } })
+          void syncRestaurant(checkout.restaurantId).catch(() => {})
+        } catch (e) {
+          setPaying(false)
+          setPayError(e instanceof Error ? e.message : 'Could not save your booking after payment.')
+        }
       },
       prefill: {
-        name: pendingPayment.guestName || "Guest",
-        email: "test@example.com",
-        contact: "9999999999",
+        name: checkout.guestName || 'Guest',
+        email: checkout.email || 'test@example.com',
+        contact: '9999999999',
       },
       theme: {
-        color: "#0f766e",
+        color: '#0f766e',
+      },
+      modal: {
+        ondismiss: () => {
+          setPaying(false)
+        },
       },
     }
 
     const rzp = new window.Razorpay(options)
+    rzp.on('payment.failed', () => {
+      setPaying(false)
+      setPayError('Payment failed. No verification token was issued. You can try again.')
+    })
     rzp.open()
-
-    setPaying(false)
   }
 
   return (
@@ -118,6 +120,8 @@ export function PaymentPage() {
         <h1 className="text-xl font-semibold text-stone-900 sm:text-2xl">Secure payment</h1>
         <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">Demo checkout</span>
       </div>
+
+      {payError ? <p className="mb-4 text-sm font-medium text-red-600">{payError}</p> : null}
 
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Booking summary</h2>

@@ -1,376 +1,204 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import data from '../data/restaurants.json'
+import { formatRupees } from '../lib/booking-price.js'
+import { getStoredReservationIds, setStoredReservationIds } from '../lib/stored-reservation-ids.js'
+import { useVenueStore } from '../hooks/use-venue-store.js'
 
-const inputCls =
-  'mt-1.5 w-full rounded-xl border border-stone-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-600/20'
-
-const MOCK_RESERVATIONS = [
-  {
-    id: 1,
-    restaurant: 'The Saffron Room',
-    date: '2026-04-08',
-    time: '7:00 PM – 9:00 PM',
-    guests: 2,
-    table: 'T3',
-    status: 'Confirmed',
-  },
-  {
-    id: 2,
-    restaurant: 'Osteria Nove',
-    date: '2026-04-12',
-    time: '8:00 PM – 10:00 PM',
-    guests: 4,
-    table: 'T1',
-    status: 'Confirmed',
-  },
-  {
-    id: 3,
-    restaurant: 'Coastal Plate',
-    date: '2026-03-20',
-    time: '12:30 PM – 2:00 PM',
-    guests: 3,
-    table: 'T5',
-    status: 'Completed',
-  },
-]
-
-/* ─── Auth Card (Login / Sign Up) ─── */
-function AuthCard({ onLogin }) {
-  const [mode, setMode] = useState('login') // 'login' | 'signup'
-
-  // Login state
-  const [loginId, setLoginId] = useState('')
-  const [loginPw, setLoginPw] = useState('')
-  const [loginErr, setLoginErr] = useState('')
-
-  // Signup state
-  const [signupName, setSignupName] = useState('')
-  const [signupId, setSignupId] = useState('')
-  const [signupPw, setSignupPw] = useState('')
-  const [signupConfirm, setSignupConfirm] = useState('')
-  const [signupErr, setSignupErr] = useState('')
-  const [signupOk, setSignupOk] = useState(false)
-
-  const handleLogin = (e) => {
-    e.preventDefault()
-    if (!loginId.trim() || !loginPw.trim()) {
-      setLoginErr('Please fill in all fields.')
-      return
-    }
-    setLoginErr('')
-    onLogin(loginId.trim())
-  }
-
-  const handleSignup = (e) => {
-    e.preventDefault()
-    if (!signupName.trim() || !signupId.trim() || !signupPw || !signupConfirm) {
-      setSignupErr('Please fill in all fields.')
-      return
-    }
-    if (signupPw !== signupConfirm) {
-      setSignupErr('Passwords do not match.')
-      return
-    }
-    if (signupPw.length < 6) {
-      setSignupErr('Password must be at least 6 characters.')
-      return
-    }
-    setSignupErr('')
-    setSignupOk(true)
-  }
-
-  const switchTo = (m) => {
-    setMode(m)
-    setLoginErr('')
-    setSignupErr('')
-    setSignupOk(false)
-  }
-
-  const isLogin = mode === 'login'
-
-  return (
-    <div className="mx-auto max-w-md px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-      <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-[0_1px_3px_rgb(0_0_0/0.06),0_12px_28px_rgb(0_0_0/0.06)] sm:p-8">
-        {/* ── Login ── */}
-        {isLogin && (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <h2 className="text-xl font-semibold text-stone-900">Welcome back</h2>
-            <p className="text-sm text-stone-600">Log in to view and manage your reservations.</p>
-
-            <label className="block">
-              <span className="text-sm font-medium text-stone-700">Email or Phone</span>
-              <input
-                type="text"
-                value={loginId}
-                onChange={(e) => setLoginId(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="username"
-                className={inputCls}
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-stone-700">Password</span>
-              <input
-                type="password"
-                value={loginPw}
-                onChange={(e) => setLoginPw(e.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                className={inputCls}
-              />
-            </label>
-
-            {loginErr && <p className="text-sm font-medium text-red-600">{loginErr}</p>}
-
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-teal-700 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-600 active:scale-[0.99]"
-            >
-              Login
-            </button>
-
-            <p className="text-center text-sm text-stone-500">
-              Don&apos;t have an account?{' '}
-              <button
-                type="button"
-                onClick={() => switchTo('signup')}
-                className="font-semibold text-teal-800 hover:underline"
-              >
-                Sign Up
-              </button>
-            </p>
-          </form>
-        )}
-
-        {/* ── Sign Up ── */}
-        {!isLogin && !signupOk && (
-          <form onSubmit={handleSignup} className="space-y-4">
-            <h2 className="text-xl font-semibold text-stone-900">Create an account</h2>
-            <p className="text-sm text-stone-600">Sign up to start making reservations.</p>
-
-            <label className="block">
-              <span className="text-sm font-medium text-stone-700">Name</span>
-              <input
-                type="text"
-                value={signupName}
-                onChange={(e) => setSignupName(e.target.value)}
-                placeholder="Jane Doe"
-                autoComplete="name"
-                className={inputCls}
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-stone-700">Email or Phone</span>
-              <input
-                type="text"
-                value={signupId}
-                onChange={(e) => setSignupId(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="username"
-                className={inputCls}
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-stone-700">Password</span>
-              <input
-                type="password"
-                value={signupPw}
-                onChange={(e) => setSignupPw(e.target.value)}
-                placeholder="Min. 6 characters"
-                autoComplete="new-password"
-                className={inputCls}
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-stone-700">Confirm Password</span>
-              <input
-                type="password"
-                value={signupConfirm}
-                onChange={(e) => setSignupConfirm(e.target.value)}
-                placeholder="Re-enter password"
-                autoComplete="new-password"
-                className={inputCls}
-              />
-            </label>
-
-            {signupErr && <p className="text-sm font-medium text-red-600">{signupErr}</p>}
-
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-teal-700 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-600 active:scale-[0.99]"
-            >
-              Sign Up
-            </button>
-
-            <p className="text-center text-sm text-stone-500">
-              Already have an account?{' '}
-              <button
-                type="button"
-                onClick={() => switchTo('login')}
-                className="font-semibold text-teal-800 hover:underline"
-              >
-                Login
-              </button>
-            </p>
-          </form>
-        )}
-
-        {/* ── Signup success ── */}
-        {!isLogin && signupOk && (
-          <div className="text-center py-4">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 text-teal-800 text-lg">
-              ✓
-            </div>
-            <h2 className="mt-4 text-xl font-semibold text-stone-900">Account created!</h2>
-            <p className="mt-2 text-sm text-stone-600">
-              You can now log in with your credentials.
-            </p>
-            <button
-              type="button"
-              onClick={() => switchTo('login')}
-              className="mt-6 inline-flex rounded-xl bg-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-600"
-            >
-              Go to Login
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  )
+function formatDisplayDate(iso) {
+  if (!iso) return ''
+  const d = new Date(iso + 'T12:00:00')
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-/* ─── Reservation Dashboard (shown after login) ─── */
-function ReservationDashboard({ user, onLogout }) {
-  const upcoming = MOCK_RESERVATIONS.filter((r) => r.status === 'Confirmed')
-  const past = MOCK_RESERVATIONS.filter((r) => r.status === 'Completed')
+export function MyReservationsPage() {
+  const { getTables, syncRestaurant } = useVenueStore()
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [rows, setRows] = useState([])
+
+  const loadReservations = useCallback(async () => {
+    const ids = getStoredReservationIds()
+    if (ids.length === 0) {
+      setRows([])
+      setLoadError('')
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setLoadError('')
+    try {
+      const res = await fetch('/api/reservations/by-ids', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+      const body = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        const msg =
+          body && typeof body === 'object' ? body.message || body.error : null
+        throw new Error(typeof msg === 'string' && msg.trim() ? msg : 'Could not load reservations.')
+      }
+
+      const reservations = Array.isArray(body?.reservations) ? body.reservations : []
+      const missingIds = Array.isArray(body?.missingIds) ? body.missingIds : []
+      const invalidIds = Array.isArray(body?.invalidIds) ? body.invalidIds : []
+      const drop = new Set([...missingIds, ...invalidIds].map(String))
+
+      if (drop.size > 0) {
+        const keep = getStoredReservationIds().filter((id) => !drop.has(String(id)))
+        setStoredReservationIds(keep)
+      }
+
+      const restaurantIds = [...new Set(reservations.map((r) => r.restaurantId).filter(Boolean))]
+      await Promise.all(restaurantIds.map((rid) => syncRestaurant(rid).catch(() => {})))
+
+      setRows(reservations)
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : 'Something went wrong.')
+      setRows([])
+    } finally {
+      setLoading(false)
+    }
+  }, [syncRestaurant])
+
+  useEffect(() => {
+    loadReservations()
+  }, [loadReservations])
+
+  const storedCount = getStoredReservationIds().length
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-stone-900">My Reservations</h1>
           <p className="mt-1 text-sm text-stone-600">
-            Logged in as <span className="font-medium text-stone-800">{user}</span>
+            Bookings on this device are remembered automatically—no account or email required.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => loadReservations()}
+            disabled={loading}
+            className="inline-flex items-center rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60"
+          >
+            Refresh
+          </button>
           <Link
             to="/restaurants"
-            className="inline-flex items-center rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+            className="inline-flex items-center rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-600"
+          >
+            Book a table
+          </Link>
+        </div>
+      </div>
+
+      {loadError ? (
+        <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{loadError}</p>
+      ) : null}
+
+      {loading ? (
+        <div className="mt-12 flex flex-col items-center justify-center gap-3 text-stone-600">
+          <span className="h-9 w-9 animate-spin rounded-full border-2 border-teal-700 border-t-transparent" />
+          <p className="text-sm">Loading your saved reservations…</p>
+        </div>
+      ) : null}
+
+      {!loading && storedCount === 0 ? (
+        <div className="mt-12 rounded-2xl border border-dashed border-stone-300 bg-stone-50/80 px-6 py-14 text-center">
+          <p className="text-lg font-medium text-stone-800">No reservations yet</p>
+          <p className="mt-2 text-sm text-stone-600">
+            When you complete a booking on this browser, it will show up here automatically.
+          </p>
+          <Link
+            to="/restaurants"
+            className="mt-6 inline-flex rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-600"
           >
             Browse restaurants
           </Link>
-          <button
-            type="button"
-            onClick={onLogout}
-            className="inline-flex items-center rounded-xl border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
-          >
-            Logout
-          </button>
         </div>
-      </div>
+      ) : null}
 
-      {/* Success banner */}
-      <div className="mt-6 rounded-xl border border-teal-200 bg-teal-50/80 px-4 py-3 text-sm font-medium text-teal-800">
-        ✓ Login successful — Welcome back!
-      </div>
+      {!loading && storedCount > 0 && rows.length === 0 && !loadError ? (
+        <div className="mt-12 rounded-2xl border border-amber-200 bg-amber-50/80 px-6 py-10 text-center">
+          <p className="font-medium text-amber-950">We couldn&apos;t load any reservation details</p>
+          <p className="mt-2 text-sm text-amber-900/90">
+            Saved IDs may be invalid or the server may be unavailable. Try refreshing, or book again to add a new
+            reservation.
+          </p>
+        </div>
+      ) : null}
 
-      {/* Upcoming */}
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold text-stone-900">Upcoming</h2>
-        {upcoming.length === 0 ? (
-          <p className="mt-3 text-sm text-stone-500 italic">No upcoming reservations.</p>
-        ) : (
-          <div className="mt-4 space-y-3">
-            {upcoming.map((r) => (
-              <div
-                key={r.id}
-                className="flex flex-col gap-3 rounded-xl border border-stone-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+      {!loading && rows.length > 0 ? (
+        <ul className="mt-10 space-y-5">
+          {rows.map((r) => {
+            const oid = r._id != null ? String(r._id) : ''
+            const restaurantName =
+              data.restaurants.find((x) => x.id === r.restaurantId)?.name ?? r.restaurantId ?? '—'
+            const tableMeta = r.restaurantId ? getTables(r.restaurantId).find((t) => t.id === r.tableId) : null
+            const tableLabel = tableMeta ? tableMeta.displayName || tableMeta.id : r.tableId ?? '—'
+            const timeLabel = r.startTime && r.endTime ? `${r.startTime} – ${r.endTime}` : '—'
+
+            return (
+              <li
+                key={oid}
+                className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"
               >
-                <div>
-                  <p className="font-semibold text-stone-900">{r.restaurant}</p>
-                  <p className="mt-1 text-sm text-stone-600">
-                    {new Date(r.date + 'T12:00:00').toLocaleDateString(undefined, {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                    })}{' '}
-                    · {r.time}
-                  </p>
-                  <p className="mt-0.5 text-sm text-stone-500">
-                    Table {r.table} · {r.guests} {r.guests === 1 ? 'guest' : 'guests'}
+                <div className="border-b border-amber-200/80 bg-gradient-to-r from-amber-50 to-amber-100/60 px-5 py-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-amber-900/75">Verification token</p>
+                  <p className="mt-1 font-mono text-2xl font-bold tracking-[0.12em] text-amber-950 tabular-nums">
+                    {r.token && String(r.token).trim() ? String(r.token).trim() : '—'}
                   </p>
                 </div>
-                <span className="inline-flex w-fit items-center rounded-full bg-teal-100 px-3 py-1 text-xs font-semibold text-teal-800">
-                  {r.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Past */}
-      <section className="mt-10">
-        <h2 className="text-lg font-semibold text-stone-900">Past</h2>
-        {past.length === 0 ? (
-          <p className="mt-3 text-sm text-stone-500 italic">No past reservations.</p>
-        ) : (
-          <div className="mt-4 space-y-3">
-            {past.map((r) => (
-              <div
-                key={r.id}
-                className="flex flex-col gap-3 rounded-xl border border-stone-100 bg-stone-50/60 p-5 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <p className="font-semibold text-stone-700">{r.restaurant}</p>
-                  <p className="mt-1 text-sm text-stone-500">
-                    {new Date(r.date + 'T12:00:00').toLocaleDateString(undefined, {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                    })}{' '}
-                    · {r.time}
-                  </p>
-                  <p className="mt-0.5 text-sm text-stone-400">
-                    Table {r.table} · {r.guests} {r.guests === 1 ? 'guest' : 'guests'}
-                  </p>
+                <div className="space-y-3 px-5 py-4 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-base font-semibold text-stone-900">{restaurantName}</p>
+                    <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold uppercase text-stone-700">
+                      {r.status ?? '—'}
+                    </span>
+                  </div>
+                  <dl className="grid gap-2 text-stone-600 sm:grid-cols-2">
+                    <div>
+                      <dt className="text-xs font-medium text-stone-500">Table</dt>
+                      <dd className="font-medium text-stone-800">{tableLabel}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium text-stone-500">Guests</dt>
+                      <dd className="font-medium text-stone-800">
+                        {r.guests ?? 1} {(r.guests ?? 1) === 1 ? 'guest' : 'guests'}
+                      </dd>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <dt className="text-xs font-medium text-stone-500">Date &amp; time</dt>
+                      <dd className="font-medium text-stone-800">
+                        {formatDisplayDate(r.date)} · {timeLabel}
+                      </dd>
+                    </div>
+                    {r.totalPrice != null ? (
+                      <div className="sm:col-span-2">
+                        <dt className="text-xs font-medium text-stone-500">Total</dt>
+                        <dd className="font-semibold text-teal-800">{formatRupees(r.totalPrice)}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                  {oid ? (
+                    <Link
+                      to={`/confirmation/${encodeURIComponent(oid)}`}
+                      className="inline-flex text-sm font-semibold text-teal-800 hover:text-teal-950 hover:underline"
+                    >
+                      View full confirmation →
+                    </Link>
+                  ) : null}
                 </div>
-                <span className="inline-flex w-fit items-center rounded-full bg-stone-200 px-3 py-1 text-xs font-semibold text-stone-600">
-                  {r.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+              </li>
+            )
+          })}
+        </ul>
+      ) : null}
     </div>
   )
-}
-
-/* ─── Page ─── */
-export function MyReservationsPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [user, setUser] = useState('')
-
-  const handleLogin = (identifier) => {
-    setUser(identifier)
-    setIsLoggedIn(true)
-  }
-
-  const handleLogout = () => {
-    setUser('')
-    setIsLoggedIn(false)
-  }
-
-  if (!isLoggedIn) {
-    return <AuthCard onLogin={handleLogin} />
-  }
-
-  return <ReservationDashboard user={user} onLogout={handleLogout} />
 }

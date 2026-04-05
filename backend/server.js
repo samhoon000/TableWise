@@ -2,10 +2,15 @@ const express = require('express')
 const Razorpay = require('razorpay')
 const cors = require('cors')
 const mongoose = require("mongoose")
+const { isValidObjectId } = mongoose
 require("dotenv").config()
 
 const Reservation = require("./models/Reservation")
 const TableStatus = require("./models/TableStatus")
+const {
+  generateUniqueReservationToken,
+  findBlockingReservation,
+} = require("./lib/reservation-helpers")
 
 const app = express()
 app.use(cors())
@@ -43,7 +48,7 @@ app.post('/create-order', async (req, res) => {
   }
 })
 
-// 🍽️ BOOK TABLE
+// 🍽️ BOOK TABLE (legacy / direct API — no payment token)
 app.post("/api/reservations/book-table", async (req, res) => {
   try {
     const {
@@ -58,18 +63,8 @@ app.post("/api/reservations/book-table", async (req, res) => {
       totalPrice,
     } = req.body
 
-    const existing = await Reservation.findOne({
-      tableId,
-      date,
-      $or: [
-        {
-          startTime: { $lt: endTime },
-          endTime: { $gt: startTime },
-        },
-      ],
-    })
-
-    if (existing) {
+    const blocking = await findBlockingReservation(tableId, date, startTime, endTime)
+    if (blocking) {
       return res.status(400).json({ message: "Table already booked" })
     }
 
@@ -83,17 +78,64 @@ app.post("/api/reservations/book-table", async (req, res) => {
       endTime,
       guests,
       totalPrice,
+      status: "booked",
     })
 
     await reservation.save()
 
-    console.log("Saved to DB:", reservation);
+    console.log("Saved to DB:", reservation)
 
     res.status(201).json({ message: "Booking successful", reservation })
-
   } catch (error) {
-    console.log(error);
+    console.log(error)
     res.status(500).json({ error: error.message })
+  }
+})
+
+// ✅ AFTER SUCCESSFUL PAYMENT — create confirmed reservation + verification token (no pre-hold)
+app.post("/api/reservations/book-after-payment", async (req, res) => {
+  try {
+    const {
+      restaurantId,
+      tableId,
+      userName,
+      userEmail,
+      date,
+      startTime,
+      endTime,
+      guests,
+      totalPrice,
+    } = req.body
+
+    if (!restaurantId || !tableId || !date || !startTime || !endTime) {
+      return res.status(400).json({ message: "Missing required booking fields" })
+    }
+
+    const blocking = await findBlockingReservation(tableId, date, startTime, endTime)
+    if (blocking) {
+      return res.status(400).json({ message: "Table already booked" })
+    }
+
+    const token = await generateUniqueReservationToken()
+    const reservation = new Reservation({
+      restaurantId,
+      tableId,
+      userName: userName || "Guest",
+      userEmail: userEmail || "guest@example.com",
+      date,
+      startTime,
+      endTime,
+      guests,
+      totalPrice,
+      status: "confirmed",
+      token,
+    })
+
+    await reservation.save()
+    res.status(201).json({ message: "Booking confirmed", reservation })
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: error.message || "Server error" })
   }
 })
 
@@ -106,7 +148,7 @@ app.get("/api/reservations/today", async (req, res) => {
       {
         $match: {
           date: today,
-          status: "booked",
+          status: { $in: ["booked", "confirmed"] },
         },
       },
       {
@@ -128,12 +170,68 @@ app.get("/api/reservations/today", async (req, res) => {
   }
 })
 
-// 🧑‍💼 GET BOOKINGS
+// 📋 BATCH BY IDS (My Reservations — no auth)
+app.post("/api/reservations/by-ids", async (req, res) => {
+  try {
+    const raw = req.body?.ids
+    const ids = Array.isArray(raw) ? raw : []
+    const seen = new Set()
+    const valid = []
+    const invalidIds = []
+    for (const x of ids) {
+      const s = String(x ?? "").trim()
+      if (!s || seen.has(s)) continue
+      seen.add(s)
+      if (isValidObjectId(s)) valid.push(s)
+      else invalidIds.push(s)
+    }
+
+    if (valid.length === 0) {
+      return res.json({ reservations: [], missingIds: [], invalidIds })
+    }
+
+    const found = await Reservation.find({ _id: { $in: valid } }).lean()
+    const foundSet = new Set(found.map((d) => String(d._id)))
+    const missingIds = valid.filter((id) => !foundSet.has(id))
+
+    found.sort((a, b) => {
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0
+      return tb - ta
+    })
+
+    res.json({ reservations: found, missingIds, invalidIds })
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" })
+  }
+})
+
+// 📄 SINGLE BOOKING (confirmation page / refresh-safe) — full document as JSON
+app.get("/api/reservations/booking/:id", async (req, res) => {
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid reservation id" })
+    }
+    const reservation = await Reservation.findById(req.params.id).lean()
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found" })
+    }
+    res.json(reservation)
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" })
+  }
+})
+
+// 🧑‍💼 GET BOOKINGS (optional ?token= for admin verification search)
 app.get("/api/reservations/:restaurantId", async (req, res) => {
   try {
-    const reservations = await Reservation.find({
-      restaurantId: req.params.restaurantId,
-    })
+    const { restaurantId } = req.params
+    const tokenRaw = req.query.token
+    const filter = { restaurantId }
+    if (tokenRaw != null && String(tokenRaw).trim() !== "") {
+      filter.token = String(tokenRaw).trim()
+    }
+    const reservations = await Reservation.find(filter).sort({ date: 1, startTime: 1 })
     res.json(reservations)
   } catch (error) {
     res.status(500).json({ error: error.message })

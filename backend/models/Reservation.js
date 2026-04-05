@@ -38,7 +38,16 @@ const reservationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      default: "booked",
+      enum: ["pending", "confirmed", "booked"],
+      default: "pending",
+    },
+    token: {
+      type: String,
+      sparse: true,
+      unique: true,
+    },
+    holdExpiresAt: {
+      type: Date,
     },
   },
   { timestamps: true }

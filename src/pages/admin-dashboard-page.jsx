@@ -18,6 +18,9 @@ export function AdminDashboardPage() {
   const [addMsg, setAddMsg] = useState('')
   const [renameInput, setRenameInput] = useState('')
   const [renameMsg, setRenameMsg] = useState('')
+  const [tokenSearchInput, setTokenSearchInput] = useState('')
+  const [tokenSearchApplied, setTokenSearchApplied] = useState('')
+  const [detailReservation, setDetailReservation] = useState(null)
 
   const reservations = useMemo(() => reservationsForRestaurant(restaurantId), [reservationsForRestaurant, restaurantId])
 
@@ -47,9 +50,29 @@ export function AdminDashboardPage() {
 
   useEffect(() => {
     if (restaurantId) {
-      syncRestaurant(restaurantId)
+      syncRestaurant(restaurantId, tokenSearchApplied ? { token: tokenSearchApplied } : undefined)
     }
-  }, [restaurantId, syncRestaurant])
+  }, [restaurantId, syncRestaurant, tokenSearchApplied])
+
+  useEffect(() => {
+    if (!detailReservation) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') setDetailReservation(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [detailReservation])
+
+  const handleTokenSearch = (e) => {
+    e.preventDefault()
+    const t = tokenSearchInput.replace(/\D/g, '')
+    setTokenSearchApplied(t)
+  }
+
+  const handleClearTokenSearch = () => {
+    setTokenSearchInput('')
+    setTokenSearchApplied('')
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />
@@ -93,7 +116,7 @@ export function AdminDashboardPage() {
   const handleRemoveReservation = async (reservationId) => {
     if (!confirm('Are you sure you want to remove this customer checkout?')) return
     try {
-      await fetch(`http://localhost:5000/api/reservations/${reservationId}`, {
+      await fetch(`/api/reservations/${reservationId}`, {
         method: 'DELETE',
       })
       syncRestaurant(restaurantId)
@@ -243,7 +266,44 @@ export function AdminDashboardPage() {
 
       <section className="mt-10 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
         <h2 className="text-lg font-semibold text-stone-900">Reservation overview</h2>
-        <p className="mt-1 text-sm text-stone-600">Guest bookings grouped by table and sorted by time.</p>
+        <p className="mt-1 text-sm text-stone-600">
+          Guest bookings grouped by table and sorted by time. Search by the numeric verification token to verify a walk-in or phone booking.
+        </p>
+
+        <form onSubmit={handleTokenSearch} className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end">
+          <label className="block flex-1">
+            <span className="text-xs font-medium text-stone-600">Find by verification token</span>
+            <input
+              value={tokenSearchInput}
+              onChange={(e) => setTokenSearchInput(e.target.value)}
+              inputMode="numeric"
+              placeholder="e.g. 482913"
+              className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-teal-500"
+            />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="submit"
+              className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600"
+            >
+              Search
+            </button>
+            <button
+              type="button"
+              onClick={handleClearTokenSearch}
+              className="rounded-xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+            >
+              Show all
+            </button>
+          </div>
+        </form>
+        {tokenSearchApplied ? (
+          <p className="mt-2 text-xs text-stone-500">
+            Filtering by token <span className="font-mono font-semibold text-stone-800">{tokenSearchApplied}</span>
+            {reservations.length === 0 ? ' — no match in this restaurant.' : ` — ${reservations.length} match(es).`}
+          </p>
+        ) : null}
+
         {reservations.length === 0 ? (
           <p className="mt-6 text-sm text-stone-500">No reservations yet for this restaurant.</p>
         ) : (
@@ -263,6 +323,7 @@ export function AdminDashboardPage() {
                       <tr>
                         <th className="px-4 py-3 font-medium">S.No</th>
                         <th className="px-4 py-3 font-medium">Guest Details</th>
+                        <th className="px-4 py-3 font-medium">Token</th>
                         <th className="px-4 py-3 font-medium">Date & Time</th>
                         <th className="px-4 py-3 font-medium text-right">Status / Action</th>
                       </tr>
@@ -274,8 +335,25 @@ export function AdminDashboardPage() {
                             {index + 1}
                           </td>
                           <td className="px-4 py-4 align-top">
-                            <p className="font-medium text-stone-900">{r.guestName}</p>
-                            <p className="text-xs text-stone-500">{r.guests} {r.guests === 1 ? 'guest' : 'guests'}</p>
+                            <button
+                              type="button"
+                              onClick={() => setDetailReservation(r)}
+                              className="text-left hover:underline"
+                            >
+                              <p className="font-medium text-stone-900">{r.guestName}</p>
+                              <p className="text-xs text-stone-500">
+                                {r.guests} {r.guests === 1 ? 'guest' : 'guests'}
+                              </p>
+                            </button>
+                          </td>
+                          <td className="px-4 py-4 align-top">
+                            {r.token ? (
+                              <span className="inline-block rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 font-mono text-sm font-bold tracking-wider text-amber-950">
+                                {r.token}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-stone-400">—</span>
+                            )}
                           </td>
                           <td className="px-4 py-4 align-top">
                             <p className="font-medium text-stone-700">{r.date}</p>
@@ -285,6 +363,14 @@ export function AdminDashboardPage() {
                             )}
                           </td>
                           <td className="px-4 py-4 align-top text-right">
+                            <p className="mb-2 text-xs font-medium uppercase text-stone-500">{r.status ?? '—'}</p>
+                            <button
+                              type="button"
+                              onClick={() => setDetailReservation(r)}
+                              className="mb-2 mr-0 inline-flex rounded-md bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-900 hover:bg-teal-100"
+                            >
+                              Details
+                            </button>
                             {restaurantId === 'saffron-room' ? (
                               <button
                                 type="button"
@@ -308,6 +394,82 @@ export function AdminDashboardPage() {
           </div>
         )}
       </section>
+
+      {detailReservation ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reservation-detail-title"
+          onClick={() => setDetailReservation(null)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-stone-200 bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            role="presentation"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <h2 id="reservation-detail-title" className="text-lg font-semibold text-stone-900">
+                Reservation details
+              </h2>
+              <button
+                type="button"
+                onClick={() => setDetailReservation(null)}
+                className="rounded-lg px-2 py-1 text-sm font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-5 rounded-xl border-2 border-amber-400 bg-amber-50 px-4 py-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-900/80">Verification token</p>
+              <p className="mt-1 font-mono text-3xl font-bold tracking-[0.15em] text-amber-950 tabular-nums">
+                {detailReservation.token || '—'}
+              </p>
+            </div>
+            <dl className="mt-5 space-y-3 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-stone-500">Guest</dt>
+                <dd className="text-right font-medium text-stone-900">{detailReservation.guestName}</dd>
+              </div>
+              {detailReservation.userEmail ? (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-stone-500">Email</dt>
+                  <dd className="break-all text-right font-medium text-stone-900">{detailReservation.userEmail}</dd>
+                </div>
+              ) : null}
+              <div className="flex justify-between gap-4">
+                <dt className="text-stone-500">Guests</dt>
+                <dd className="text-right font-medium text-stone-900">{detailReservation.guests}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-stone-500">Table</dt>
+                <dd className="text-right font-medium text-stone-900">
+                  {getTables(restaurantId).find((t) => t.id === detailReservation.tableId)?.displayName ||
+                    detailReservation.tableId}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-stone-500">Date</dt>
+                <dd className="text-right font-medium text-stone-900">{detailReservation.date}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-stone-500">Time</dt>
+                <dd className="text-right font-medium text-stone-900">
+                  {detailReservation.entryTime} – {detailReservation.exitTime}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-stone-500">Status</dt>
+                <dd className="text-right font-medium text-stone-900">{detailReservation.status ?? '—'}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-stone-500">Reservation ID</dt>
+                <dd className="break-all text-right font-mono text-xs text-stone-700">{detailReservation.id}</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

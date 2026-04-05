@@ -1,6 +1,7 @@
 const Reservation = require("../models/Reservation");
+const { findBlockingReservation } = require("../lib/reservation-helpers");
 
-// ✅ Create booking
+// ✅ Create booking (legacy direct API — no payment token)
 exports.bookTable = async (req, res) => {
   try {
     const {
@@ -15,19 +16,8 @@ exports.bookTable = async (req, res) => {
       totalPrice,
     } = req.body;
 
-    // 🔒 Check overlap
-    const existing = await Reservation.findOne({
-      tableId,
-      date,
-      $or: [
-        {
-          startTime: { $lt: endTime },
-          endTime: { $gt: startTime },
-        },
-      ],
-    });
-
-    if (existing) {
+    const blocking = await findBlockingReservation(tableId, date, startTime, endTime);
+    if (blocking) {
       return res.status(400).json({ message: "Table already booked" });
     }
 
@@ -41,6 +31,7 @@ exports.bookTable = async (req, res) => {
       endTime,
       guests,
       totalPrice,
+      status: "booked",
     });
 
     await reservation.save();

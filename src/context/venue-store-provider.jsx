@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, useEffect } from 'react'
 import { getRestaurantExtras } from '../lib/get-restaurant-extras.js'
+import { addStoredReservationId } from '../lib/stored-reservation-ids.js'
 import { reservationOverlaps } from '../lib/time-range.js'
 import { VenueContext } from './venue-context.js'
 
@@ -92,6 +93,8 @@ export function VenueStoreProvider({ children }) {
       return snapshot.reservations.some((r) => {
         if (r.restaurantId !== restaurantId || r.tableId !== tableId || r.date !== date) return false
         if (excludeId && r.id === excludeId) return false
+        if (r.status === 'pending') return false
+        if (r.status === 'cancelled') return false
         return reservationOverlaps(r.entryTime, r.exitTime, entryTime, exitTime)
       })
     },
@@ -110,70 +113,72 @@ export function VenueStoreProvider({ children }) {
     [hasBookingConflict, isManualReserved],
   )
 
-  const addReservation = useCallback(
+  const mapServerReservation = useCallback((r, restaurantNameFallback) => {
+    const id = r._id?.toString?.() ?? r._id
+    return {
+      id,
+      restaurantId: r.restaurantId,
+      tableId: r.tableId,
+      date: r.date,
+      entryTime: r.startTime,
+      exitTime: r.endTime,
+      guestName: r.userName,
+      userEmail: r.userEmail,
+      guests: r.guests || 2,
+      totalPrice: r.totalPrice,
+      createdAt: r.createdAt,
+      token: r.token,
+      status: r.status,
+      holdExpiresAt: r.holdExpiresAt,
+      restaurantName: restaurantNameFallback,
+    }
+  }, [])
+
+  const createPaidReservation = useCallback(
     async (payload) => {
-      try {
-        const response = await fetch("http://localhost:5000/api/reservations/book-table", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            restaurantId: payload.restaurantId,
-            tableId: payload.tableId,
-            userName: payload.guestName,
-            userEmail: payload.email || "test@example.com",
-            date: payload.date,
-            startTime: payload.entryTime,
-            endTime: payload.exitTime,
-            guests: payload.guests,
-            totalPrice: payload.totalPrice,
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to book table");
-        }
-
-        const data = await response.json();
-        
-        const id = data.reservation?._id || 
-          (typeof crypto !== 'undefined' && crypto.randomUUID
-            ? crypto.randomUUID()
-            : `res-${Date.now()}-${Math.random().toString(16).slice(2)}`);
-
-        setAndPersist((prev) => ({
-          ...prev,
-          reservations: [
-            ...prev.reservations,
-            {
-              id,
-              restaurantId: payload.restaurantId,
-              tableId: payload.tableId,
-              date: payload.date,
-              entryTime: payload.entryTime,
-              exitTime: payload.exitTime,
-              guestName: payload.guestName,
-              guests: payload.guests,
-              restaurantName: payload.restaurantName,
-              totalPrice: payload.totalPrice ?? null,
-              createdAt: new Date().toISOString(),
-            },
-          ],
-        }));
-
-        return id;
-      } catch (error) {
-        console.error("Booking error:", error);
+      const response = await fetch('/api/reservations/book-after-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurantId: payload.restaurantId,
+          tableId: payload.tableId,
+          userName: payload.guestName,
+          userEmail: payload.email || 'guest@example.com',
+          date: payload.date,
+          startTime: payload.entryTime,
+          endTime: payload.exitTime,
+          guests: payload.guests,
+          totalPrice: payload.totalPrice,
+        }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        const msg = data.message || data.error || 'Could not complete booking after payment.'
+        throw new Error(typeof msg === 'string' ? msg : 'Could not complete booking after payment.')
       }
+      const reservation = data.reservation
+      const rawId = reservation?._id ?? reservation?.id
+      if (rawId == null || String(rawId).trim() === '') {
+        throw new Error('Invalid booking response from server.')
+      }
+
+      const mapped = mapServerReservation(reservation, payload.restaurantName)
+      setAndPersist((prev) => ({
+        ...prev,
+        reservations: [...prev.reservations.filter((x) => x.id !== mapped.id), mapped],
+      }))
+
+      addStoredReservationId(String(rawId))
+
+      return { reservation, reservationId: String(rawId) }
     },
-    [setAndPersist],
+    [mapServerReservation, setAndPersist],
   )
 
   const setManualTableReserved = useCallback(
     async (restaurantId, tableId, reserved) => {
       try {
-        await fetch("http://localhost:5000/api/table-status", {
+        await fetch('/api/table-status', {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ restaurantId, tableId, isManualReserved: reserved })
@@ -243,7 +248,7 @@ export function VenueStoreProvider({ children }) {
   const renameTable = useCallback(
     async (restaurantId, tableId, newName) => {
       try {
-        await fetch("http://localhost:5000/api/table-status", {
+        await fetch('/api/table-status', {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ restaurantId, tableId, displayName: newName })
@@ -271,28 +276,39 @@ export function VenueStoreProvider({ children }) {
     [snapshot.reservations],
   )
 
-  const syncRestaurant = useCallback(async (restaurantId) => {
+  const syncRestaurant = useCallback(async (restaurantId, options) => {
     if (!restaurantId) return;
     try {
+      const tokenQ = options?.token != null ? String(options.token).trim() : ''
+      const resUrl =
+        tokenQ !== ''
+          ? `/api/reservations/${restaurantId}?token=${encodeURIComponent(tokenQ)}`
+          : `/api/reservations/${restaurantId}`
       const [resBookings, resStatus] = await Promise.all([
-        fetch(`http://localhost:5000/api/reservations/${restaurantId}`).then(r => r.json()),
-        fetch(`http://localhost:5000/api/table-status/${restaurantId}`).then(r => r.json())
+        fetch(resUrl).then((r) => r.json()),
+        fetch(`/api/table-status/${restaurantId}`).then((r) => r.json()),
       ]);
 
       setAndPersist((prev) => {
         const otherRes = prev.reservations.filter(r => r.restaurantId !== restaurantId);
-        const mappedBookings = Array.isArray(resBookings) ? resBookings.map(r => ({
-          id: r._id,
-          restaurantId: r.restaurantId,
-          tableId: r.tableId,
-          date: r.date,
-          entryTime: r.startTime,
-          exitTime: r.endTime,
-          guestName: r.userName,
-          guests: r.guests || 2,
-          totalPrice: r.totalPrice,
-          createdAt: r.createdAt
-        })) : [];
+        const mappedBookings = Array.isArray(resBookings)
+          ? resBookings.map((r) => ({
+              id: typeof r._id === 'string' ? r._id : r._id.toString(),
+              restaurantId: r.restaurantId,
+              tableId: r.tableId,
+              date: r.date,
+              entryTime: r.startTime,
+              exitTime: r.endTime,
+              guestName: r.userName,
+              userEmail: r.userEmail,
+              guests: r.guests || 2,
+              totalPrice: r.totalPrice,
+              createdAt: r.createdAt,
+              token: r.token,
+              status: r.status,
+              holdExpiresAt: r.holdExpiresAt,
+            }))
+          : []
 
         const nextManualReserved = { ...prev.manualReserved };
         Object.keys(nextManualReserved).forEach(k => {
@@ -326,7 +342,7 @@ export function VenueStoreProvider({ children }) {
       getTableUiStatus,
       isManualReserved,
       hasBookingConflict,
-      addReservation,
+      createPaidReservation,
       setManualTableReserved,
       addTable,
       removeTable,
@@ -340,7 +356,7 @@ export function VenueStoreProvider({ children }) {
       getTableUiStatus,
       isManualReserved,
       hasBookingConflict,
-      addReservation,
+      createPaidReservation,
       setManualTableReserved,
       addTable,
       removeTable,

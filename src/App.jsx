@@ -28,7 +28,8 @@ export default function App() {
                 <Route path="/restaurants/:restaurantId" element={<RestaurantDetailPage />} />
                 <Route path="/book/:restaurantId" element={<BookingFlowPage />} />
                 <Route path="/payment" element={<PaymentPage />} />
-                <Route path="/confirmation" element={<ConfirmationPage />} />
+                <Route path="/confirmation" element={<Navigate to="/restaurants" replace />} />
+                <Route path="/confirmation/:id" element={<ConfirmationPage />} />
                 <Route path="/my-reservations" element={<MyReservationsPage />} />
                 <Route path="/admin/login" element={<AdminLoginPage />} />
                 <Route path="/admin/register/success" element={<AdminRegisterSuccessPage />} />
